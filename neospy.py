@@ -5,6 +5,8 @@ from subprocess import Popen, PIPE
 from datetime import datetime, timedelta
 sys.path.append('./')
 from config import config
+from config import config_mainnet
+from config import config_testnet
 sys.path.append('./python/')
 import neoapi
 from log import logging
@@ -17,7 +19,26 @@ START_SILENT = config['startsilent']
 #check interval(second)
 INTERVAL = config['interval']
 LOCAL_SRV = config['localsrv']
+SEEDS = config['seeds']
+NEOCLI_PATH = config['neoclipath']
 
+type = ""
+if len(sys.argv) > 1:
+	type = sys.argv[1]
+if type == "mainnet":
+	RESTART_THRESHOLD = config_mainnet['restartthreshold']
+	START_SILENT = config_mainnet['startsilent']
+	INTERVAL = config_mainnet['interval']
+	LOCAL_SRV = config_mainnet['localsrv']
+	SEEDS = config_mainnet['seeds']
+if type == "testnet":
+	RESTART_THRESHOLD = config_testnet['restartthreshold']
+	START_SILENT = config_testnet['startsilent']
+	INTERVAL = config_testnet['interval']
+	LOCAL_SRV = config_testnet['localsrv']
+	SEEDS = config_testnet['seeds']
+if type == "":
+	type = "default_mainnet"
 lastRestartTimestamp = datetime.fromtimestamp(0)
 lastRecordLocalIndex = 0
 lastRecordLocalTime = datetime.fromtimestamp(0)
@@ -25,16 +46,16 @@ restart_cnt = 0
 
 def getBestBlockCount():
     maxHeight = -1
-    for seed in config['seeds']:
+    for seed in SEEDS:
         height = neoapi.getCurrentHeight('http://' + seed)
         if maxHeight < height:
             maxHeight = height
-    logging.info('[getBestBlockCount] maxheight: {0}'.format(maxHeight))
+    logging.info('[{0}] getBestBlockCount maxheight: {1}'.format(type, maxHeight))
     return maxHeight
 
 def getLocalBlockCount():
     height = neoapi.getCurrentHeight(LOCAL_SRV)
-    logging.info('[getLocalBlockCount] localheight: {0}'.format(height))
+    logging.info('[{0}] getLocalBlockCount localheight: {1}'.format(type, height))
     return height
 
 def isLocalRunning():
@@ -43,10 +64,10 @@ def isLocalRunning():
     output = p.communicate()[0]
     output = output.decode('utf-8')
     state = p.returncode
-    logging.info('[isLocalRunning] shell command, state: {0}, output: {1}'.format(state, output))
+    logging.info('[{0}] isLocalRunning shell command, state: {1}, output: {2}'.format(type, state, output))
     if state != 0:
         height = getLocalBlockCount()
-        logging.info('[isLocalRunning] command failed, use rpc getblockcount. height: {0}'.format(height))
+        logging.info('[{0}] isLocalRunning command failed, use rpc getblockcount. height: {1}'.format(type, height))
         if height < 0:
             return False
         return True
@@ -55,7 +76,7 @@ def isLocalRunning():
     return True
 
 def startLocalNode():
-    result = os.system('./shell/start.sh {0}'.format(config['neoclipath']))
+    result = os.system('./shell/start.sh {0}'.format(NEOCLI_PATH))
     if result == 0:
         global lastRestartTimestamp 
         lastRestartTimestamp = datetime.now()
@@ -81,7 +102,7 @@ def notChangeOverLimit():
 	
 def shutdownScreen():
     result = os.system('./shell/shutdownScreen.sh')
-    logging.warning('shutdown.res:{0}'.format(result))
+    logging.warning('[{0}] shutdown.res:{1}'.format(type, result))
     if result == 0:
         return True
     return False
@@ -89,7 +110,6 @@ def shutdownScreen():
 while True:
     if not isLocalRunning():
         if not shutdownScreen():
-	    logging.info('[shutdownScreen] res: false')
             continue;
         startLocalNode()
 
@@ -97,22 +117,23 @@ while True:
     #get rss
     mem = state.getRss()
     if 0 < mem:
-        logging.info('[getrss] neo-cli rss: {0}KiB'.format(mem))
+        logging.info('[{0}] getrss rss: {1}KiB'.format(type, mem))
     #check block count
     localBlockCount = getLocalBlockCount()
     bestBlockCount = getBestBlockCount()
     if localBlockCount < 0 or bestBlockCount < 0:
-        logging.error('[wrongheight] wrong height, localheight: {0}, bestheight: {1}'.format(localBlockCount, bestBlockCount))
+        logging.error('[{0}] wrong height, localheight: {1}, bestheight: {2}'.format(type, localBlockCount, bestBlockCount))
         continue
     if localBlockCount > lastRecordLocalIndex:
-	lastRecordLocalIndex = localBlockCount
-	lastRecordLocalTime = datetime.now()
+        lastRecordLocalIndex = localBlockCount
+        lastRecordLocalTime = datetime.now()
     if localBlockCount == lastRecordLocalIndex and notChangeOverLimit():
         restart_cnt += 1
-        logging.warning('[restart] restarting, restart_cnt: {0}, localheight: {1}, bestheight: {2}'.format(restart_cnt, localBlockCount, bestBlockCount))
+        logging.warning('[{0}] restarting, restart_cnt: {1}, localheight: {2}, bestheight: {3}'.format(type, restart_cnt, localBlockCount, bestBlockCount))
         stopLocalNode()
         continue
     if RESTART_THRESHOLD < bestBlockCount - localBlockCount and not restartRecently():
         restart_cnt += 1
-        logging.warning('[restart] restarting, restart_cnt: {0}, localheight: {1}, bestheight: {2}'.format(restart_cnt, localBlockCount, bestBlockCount))
+        logging.warning('[{0}] restarting, restart_cnt: {1}, localheight: {2}, bestheight: {3}'.format(type, restart_cnt, localBlockCount, bestBlockCount))
         stopLocalNode()
+

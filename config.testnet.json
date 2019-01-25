@@ -1,0 +1,18 @@
+{
+    "neoclipath": "~/neo-cli",
+    "interval": 10,
+    "restartthreshold": 10,
+    "startsilent": 10,
+    "localsrv": "http://localhost:20332",
+    "seeds": [
+        "seed1.ngd.network:20332",
+        "seed2.ngd.network:20332",
+        "seed3.ngd.network:20332",
+        "seed4.ngd.network:20332",
+        "seed5.ngd.network:20332",
+        "seed6.ngd.network:20332",
+        "seed7.ngd.network:20332",
+        "seed8.ngd.network:20332",
+        "seed9.ngd.network:20332"  
+    ]
+}
