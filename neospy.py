@@ -89,7 +89,7 @@ def shutdownScreen():
 while True:
     if not isLocalRunning():
         if not shutdownScreen():
-			logging.info('[shutdownScreen] res: false')
+	    logging.info('[shutdownScreen] res: false')
             continue;
         startLocalNode()
 
@@ -104,10 +104,10 @@ while True:
     if localBlockCount < 0 or bestBlockCount < 0:
         logging.error('[wrongheight] wrong height, localheight: {0}, bestheight: {1}'.format(localBlockCount, bestBlockCount))
         continue
-	if localBlockCount > lastRecordLocalIndex:
-		lastRecordLocalIndex = localBlockCount
-		lastRecordLocalTime = datetime.now()
-	if localBlockCount == lastRecordLocalIndex and notChangeOverLimit():
+    if localBlockCount > lastRecordLocalIndex:
+	lastRecordLocalIndex = localBlockCount
+	lastRecordLocalTime = datetime.now()
+    if localBlockCount == lastRecordLocalIndex and notChangeOverLimit():
         restart_cnt += 1
         logging.warning('[restart] restarting, restart_cnt: {0}, localheight: {1}, bestheight: {2}'.format(restart_cnt, localBlockCount, bestBlockCount))
         stopLocalNode()
