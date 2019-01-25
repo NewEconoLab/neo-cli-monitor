@@ -1,5 +1,5 @@
 # neo-cli-monitor
-to implement neo-cli auto test
+
 ##preparation
 1. install python3.7.0
 2. install screen

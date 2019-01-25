@@ -19,6 +19,8 @@ INTERVAL = config['interval']
 LOCAL_SRV = config['localsrv']
 
 lastRestartTimestamp = datetime.fromtimestamp(0)
+lastRecordLocalIndex = 0
+lastRecordLocalTime = datetime.fromtimestamp(0)
 restart_cnt = 0
 
 def getBestBlockCount():
@@ -68,12 +70,27 @@ def stopLocalNode():
     return True
 
 def restartRecently():
-    if timedelta(minutes=START_SILENT) < datetime.now() - lastRestartTimestamp:
+    if timedelta(minutes=START_SILENT) > datetime.now() - lastRestartTimestamp:
         return True
     return False
-
+	
+def notChangeOverLimit():
+    if timedelta(minutes=START_SILENT) < datetime.now() - lastRecordLocalTime:
+        return True
+    return False
+	
+def shutdownScreen():
+    result = os.system('./shell/shutdownScreen.sh')
+    logging.warning('shutdown.res:{0}'.format(result))
+    if result == 0:
+        return True
+    return False
+	
 while True:
     if not isLocalRunning():
+        if not shutdownScreen():
+			logging.info('[shutdownScreen] res: false')
+            continue;
         startLocalNode()
 
     time.sleep(INTERVAL)
@@ -86,6 +103,14 @@ while True:
     bestBlockCount = getBestBlockCount()
     if localBlockCount < 0 or bestBlockCount < 0:
         logging.error('[wrongheight] wrong height, localheight: {0}, bestheight: {1}'.format(localBlockCount, bestBlockCount))
+        continue
+	if localBlockCount > lastRecordLocalIndex:
+		lastRecordLocalIndex = localBlockCount
+		lastRecordLocalTime = datetime.now()
+	if localBlockCount == lastRecordLocalIndex and notChangeOverLimit():
+        restart_cnt += 1
+        logging.warning('[restart] restarting, restart_cnt: {0}, localheight: {1}, bestheight: {2}'.format(restart_cnt, localBlockCount, bestBlockCount))
+        stopLocalNode()
         continue
     if RESTART_THRESHOLD < bestBlockCount - localBlockCount and not restartRecently():
         restart_cnt += 1

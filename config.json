@@ -1,8 +1,8 @@
 {
     "neoclipath": "~/neo-cli",
     "interval": 10,
-    "restartthreshold": 100,
-    "startsilent": 60,
+    "restartthreshold": 10,
+    "startsilent": 10,
     "localsrv": "http://localhost:10332",
     "seeds": [
         "seed1.ngd.network:10332",
