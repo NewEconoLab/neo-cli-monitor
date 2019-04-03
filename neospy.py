@@ -136,8 +136,8 @@ while True:
         restart_cnt += 1
         logging.warning('[{0}] restarting, restart_cnt: {1}, localheight: {2}, bestheight: {3}'.format(type, restart_cnt, localBlockCount, bestBlockCount))
         stopLocalNode()
-		continue
-	if localBlockCount > bestBlockCount and not restartRecently():
-		restart_cnt += 1
-		stopLocalNode();
+	continue
+    if localBlockCount > bestBlockCount and not restartRecently():
+	restart_cnt += 1
+	stopLocalNode();
 
